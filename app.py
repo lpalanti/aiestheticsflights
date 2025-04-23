@@ -1,5 +1,6 @@
 import requests
 import streamlit as st
+import datetime  # Importar a biblioteca datetime para manipulação de datas
 
 # Substitua com a sua chave da API
 API_KEY = 'f8a08438f91b2695c91128afd91db218'  # Chave fornecida
@@ -30,8 +31,10 @@ st.title('Busca de Voos')
 # Entradas do usuário
 origem = st.text_input('Origem (código IATA do aeroporto)', 'JFK')  # Exemplo: 'JFK' para JFK em NY
 destino = st.text_input('Destino (código IATA do aeroporto)', 'LHR')  # Exemplo: 'LHR' para Heathrow em Londres
-data_partida = st.date_input('Data de Partida', value='2025-05-10')
-data_retorno = st.date_input('Data de Retorno', value='2025-05-20')
+
+# Alterando a forma como as datas são tratadas
+data_partida = st.date_input('Data de Partida', value=datetime.date(2025, 5, 10))
+data_retorno = st.date_input('Data de Retorno', value=datetime.date(2025, 5, 20))
 
 # Quando o usuário clicar no botão de buscar
 if st.button('Buscar Voos'):
@@ -49,5 +52,3 @@ if st.button('Buscar Voos'):
             st.write("---")
     else:
         st.write("Nenhum voo encontrado ou erro na requisição.")
-
-
