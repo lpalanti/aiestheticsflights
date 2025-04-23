@@ -1,5 +1,6 @@
 import streamlit as st
 import requests
+import altair as alt
 from datetime import datetime, timedelta
 
 # --- CONFIG ---
