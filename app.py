@@ -1,78 +1,53 @@
-import streamlit as st
 import requests
-import altair as alt
-from datetime import datetime, timedelta
+import streamlit as st
 
-# --- CONFIG ---
-st.set_page_config(page_title="Rastreador de Voos", layout="wide")
+# Substitua com a sua chave da API
+API_KEY = 'f8a08438f91b2695c91128afd91db218'  # Chave fornecida
+BASE_URL = "http://api.aviationstack.com/v1/flights"  # URL correta da API
 
-# --- API CONFIG ---
-API_KEY = 'f8a08438f91b2695c91128afd91db218'  # Sua chave API
-BASE_URL = 'http://api.aviationstack.com/v1/flights'
+# Função para buscar voos
+def buscar_voos(origem, destino, data_partida, data_retorno):
+    params = {
+        'access_key': API_KEY,
+        'dep_iata': origem,  # Código IATA do aeroporto de origem (Ex: 'JFK' para JFK Airport)
+        'arr_iata': destino,  # Código IATA do aeroporto de destino (Ex: 'LHR' para Heathrow)
+        'flight_date': data_partida,  # Data do voo de ida (Formato: 'YYYY-MM-DD')
+        'return_date': data_retorno,  # Data do voo de retorno (Formato: 'YYYY-MM-DD')
+    }
+    
+    # Fazendo a requisição GET para a API
+    response = requests.get(BASE_URL, params=params)
+    
+    if response.status_code == 200:
+        return response.json()  # Retorna os dados dos voos encontrados
+    else:
+        print(f"Erro ao buscar voos: {response.status_code}")
+        return None
 
-# --- HEADER ---
-st.title("✈️ Rastreador de Voos em Tempo Real")
-st.markdown("Veja informações de voos a partir dos dados públicos das companhias aéreas.")
+# Interface do Streamlit
+st.title('Busca de Voos')
 
-# --- SIDEBAR FILTERS ---
-st.sidebar.header("🔎 Filtros de busca")
+# Entradas do usuário
+origem = st.text_input('Origem (código IATA do aeroporto)', 'JFK')  # Exemplo: 'JFK' para JFK em NY
+destino = st.text_input('Destino (código IATA do aeroporto)', 'LHR')  # Exemplo: 'LHR' para Heathrow em Londres
+data_partida = st.date_input('Data de Partida', value='2025-05-10')
+data_retorno = st.date_input('Data de Retorno', value='2025-05-20')
 
-iata_departure = st.sidebar.text_input("Aeroporto de Origem (IATA)", "GRU")
-iata_arrival = st.sidebar.text_input("Aeroporto de Destino (IATA)", "MIA")
-flight_date = st.sidebar.date_input("Data do voo", datetime.today())
-airline_filter = st.sidebar.text_input("Companhia aérea (ex: LATAM, Azul)", "")
-class_filter = st.sidebar.selectbox("Classe", ["Todas", "Econômica", "Executiva", "Primeira"], index=0)
-time_range = st.sidebar.slider("Horário de partida (local)", 0, 23, (0, 23))
-direct_only = st.sidebar.checkbox("Apenas voos diretos")
+# Quando o usuário clicar no botão de buscar
+if st.button('Buscar Voos'):
+    dados_voos = buscar_voos(origem, destino, str(data_partida), str(data_retorno))
+    
+    if dados_voos:
+        st.write(f"Resultados encontrados: {len(dados_voos['data'])} voos")
+        
+        # Exibindo os voos encontrados
+        for voo in dados_voos['data']:
+            st.write(f"Voo: {voo['flight']['iata']} - {voo['airline']['name']}")
+            st.write(f"Origem: {voo['departure']['airport']} - {voo['departure']['estimated']} (Estimado)")
+            st.write(f"Destino: {voo['arrival']['airport']} - {voo['arrival']['estimated']} (Estimado)")
+            st.write(f"Status do voo: {voo['flight']['status']}")
+            st.write("---")
+    else:
+        st.write("Nenhum voo encontrado ou erro na requisição.")
 
-# --- API REQUEST ---
-params = {
-    'access_key': API_KEY,
-    'dep_iata': iata_departure,
-    'arr_iata': iata_arrival,
-    'flight_date': flight_date.strftime('%Y-%m-%d')
-}
-
-st.sidebar.markdown("---")
-if st.sidebar.button("🔍 Buscar voos"):
-    with st.spinner("Consultando dados de voo..."):
-        response = requests.get(BASE_URL, params=params)
-        data = response.json()
-
-        if "data" not in data or not data["data"]:
-            st.warning("Nenhum voo encontrado para os filtros selecionados.")
-        else:
-            voos = data["data"]
-
-            # --- FILTRAGEM MANUAL (mock para filtros adicionais) ---
-            voos_filtrados = []
-            for voo in voos:
-                hora_partida = voo['departure']['scheduled']
-                airline = voo['airline']['name']
-                if airline_filter and airline_filter.lower() not in airline.lower():
-                    continue
-                if hora_partida:
-                    hora_obj = datetime.fromisoformat(hora_partida)
-                    if not (time_range[0] <= hora_obj.hour <= time_range[1]):
-                        continue
-                if direct_only and voo['arrival']['airport'] != iata_arrival:
-                    continue
-                voos_filtrados.append(voo)
-
-            if voos_filtrados:
-                for voo in voos_filtrados:
-                    st.markdown("----")
-                    col1, col2, col3 = st.columns([2, 2, 2])
-                    with col1:
-                        st.subheader(f"✈️ {voo['airline']['name']}")
-                        st.text(f"Voo: {voo['flight']['iata']}")
-                        st.text(f"Aeronave: {voo.get('aircraft', {}).get('registration', 'N/A')}")
-                    with col2:
-                        st.markdown("**🛫 Partida**")
-                        st.text(f"{voo['departure']['airport']} - {voo['departure']['scheduled']}")
-                    with col3:
-                        st.markdown("**🛬 Chegada**")
-                        st.text(f"{voo['arrival']['airport']} - {voo['arrival']['scheduled']}")
-            else:
-                st.warning("Nenhum voo encontrado com os filtros aplicados.")
 
