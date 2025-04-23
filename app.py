@@ -19,6 +19,7 @@ def buscar_voos(origem, destino, data_partida, data_retorno):
     # Fazendo a requisição GET para a API
     response = requests.get(BASE_URL, params=params)
     
+    # Verificando a resposta da API
     if response.status_code == 200:
         return response.json()  # Retorna os dados dos voos encontrados
     else:
@@ -41,14 +42,20 @@ if st.button('Buscar Voos'):
     dados_voos = buscar_voos(origem, destino, str(data_partida), str(data_retorno))
     
     if dados_voos:
-        st.write(f"Resultados encontrados: {len(dados_voos['data'])} voos")
+        # Verifique o conteúdo da resposta para depuração
+        st.write("Resposta da API:")
+        st.json(dados_voos)  # Exibe o JSON completo da resposta
         
         # Exibindo os voos encontrados
-        for voo in dados_voos['data']:
-            st.write(f"Voo: {voo['flight']['iata']} - {voo['airline']['name']}")
-            st.write(f"Origem: {voo['departure']['airport']} - {voo['departure']['estimated']} (Estimado)")
-            st.write(f"Destino: {voo['arrival']['airport']} - {voo['arrival']['estimated']} (Estimado)")
-            st.write(f"Status do voo: {voo['flight']['status']}")
-            st.write("---")
+        if 'data' in dados_voos:
+            st.write(f"Resultados encontrados: {len(dados_voos['data'])} voos")
+            for voo in dados_voos['data']:
+                st.write(f"Voo: {voo['flight']['iata']} - {voo['airline']['name']}")
+                st.write(f"Origem: {voo['departure']['airport']} - {voo['departure']['estimated']} (Estimado)")
+                st.write(f"Destino: {voo['arrival']['airport']} - {voo['arrival']['estimated']} (Estimado)")
+                st.write(f"Status do voo: {voo['flight']['status']}")
+                st.write("---")
+        else:
+            st.write("Nenhum voo encontrado na resposta.")
     else:
         st.write("Nenhum voo encontrado ou erro na requisição.")
