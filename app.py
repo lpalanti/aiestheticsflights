@@ -1,6 +1,6 @@
 import requests
 import streamlit as st
-import datetime  # Importar a biblioteca datetime para manipulação de datas
+import datetime
 
 # Substitua com a sua chave da API
 API_KEY = 'f8a08438f91b2695c91128afd91db218'  # Chave fornecida
@@ -17,6 +17,7 @@ def buscar_voos(origem, destino, data_partida, data_retorno):
     }
     
     # Fazendo a requisição GET para a API
+    print(f"Realizando requisição para a URL: {BASE_URL} com parâmetros {params}")
     response = requests.get(BASE_URL, params=params)
     
     # Verificando a resposta da API
@@ -47,7 +48,7 @@ if st.button('Buscar Voos'):
         st.json(dados_voos)  # Exibe o JSON completo da resposta
         
         # Exibindo os voos encontrados
-        if 'data' in dados_voos:
+        if 'data' in dados_voos and dados_voos['data']:
             st.write(f"Resultados encontrados: {len(dados_voos['data'])} voos")
             for voo in dados_voos['data']:
                 st.write(f"Voo: {voo['flight']['iata']} - {voo['airline']['name']}")
@@ -56,6 +57,7 @@ if st.button('Buscar Voos'):
                 st.write(f"Status do voo: {voo['flight']['status']}")
                 st.write("---")
         else:
-            st.write("Nenhum voo encontrado na resposta.")
+            st.write("Nenhum voo encontrado para os parâmetros especificados.")
     else:
-        st.write("Nenhum voo encontrado ou erro na requisição.")
+        st.write("Erro na requisição ou nenhum voo encontrado.")
+
